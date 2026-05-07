@@ -10,60 +10,74 @@
   <body>
     <main class="app-shell">
       <section class="workbench" aria-label="Typing test">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">Keyline Type</p>
-            <h1>typing test</h1>
+        <header class="app-header">
+          <div class="brand-lockup">
+            <div class="brand-mark" aria-hidden="true">K</div>
+            <div>
+              <p class="eyebrow">Keyline Type</p>
+              <h1>practice</h1>
+            </div>
           </div>
 
           <div class="toolbar" aria-label="Test controls">
             <div class="segmented" role="group" aria-label="Duration">
-              <button class="time-option is-active" type="button" data-duration="15">15</button>
-              <button class="time-option" type="button" data-duration="30">30</button>
-              <button class="time-option" type="button" data-duration="60">60</button>
+              <button class="time-option is-active" type="button" data-duration="15">15s</button>
+              <button class="time-option" type="button" data-duration="30">30s</button>
+              <button class="time-option" type="button" data-duration="60">60s</button>
             </div>
-            <button id="restartButton" class="icon-button" type="button" title="New test" aria-label="New test">R</button>
+            <button id="restartButton" class="icon-button" type="button" title="New test" aria-label="New test">new</button>
           </div>
         </header>
 
-        <div class="meter-row" aria-live="polite">
-          <div>
-            <span id="timer" class="metric-value">15</span>
-            <span class="metric-label">seconds</span>
+        <section class="session-panel" aria-label="Current session">
+          <div class="session-header">
+            <div>
+              <p id="sessionStatus" class="session-status">ready</p>
+              <div class="timer-track" aria-hidden="true">
+                <span id="timerProgress"></span>
+              </div>
+            </div>
+            <div class="timer-block" aria-live="polite">
+              <span id="timer" class="timer-value">15</span>
+              <span class="timer-label">sec</span>
+            </div>
           </div>
-          <div>
-            <span id="liveWpm" class="metric-value">0</span>
-            <span class="metric-label">wpm</span>
-          </div>
-          <div>
-            <span id="liveAccuracy" class="metric-value">100</span>
-            <span class="metric-label">accuracy</span>
-          </div>
-        </div>
 
-        <button id="typingSurface" class="typing-surface" type="button" aria-label="Typing area">
-          <span id="wordStream" class="word-stream"></span>
-          <span id="caret" class="caret" aria-hidden="true"></span>
-        </button>
+          <div class="meter-row" aria-live="polite">
+            <div class="metric-tile">
+              <span id="liveWpm" class="metric-value">0</span>
+              <span class="metric-label">live wpm</span>
+            </div>
+            <div class="metric-tile">
+              <span id="liveAccuracy" class="metric-value">100</span>
+              <span class="metric-label">accuracy</span>
+            </div>
+            <div class="metric-tile">
+              <span id="resultRaw" class="metric-value">--</span>
+              <span class="metric-label">raw</span>
+            </div>
+          </div>
+
+          <button id="typingSurface" class="typing-surface" type="button" aria-label="Typing area">
+            <span id="wordStream" class="word-stream"></span>
+            <span id="caret" class="caret" aria-hidden="true"></span>
+          </button>
+        </section>
 
         <textarea id="typingInput" class="typing-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Typing input"></textarea>
 
         <footer class="result-strip" aria-live="polite">
-          <div>
+          <div class="result-block primary-result">
             <span id="resultWpm" class="result-number">--</span>
-            <span class="metric-label">wpm</span>
+            <span class="metric-label">final wpm</span>
           </div>
-          <div>
-            <span id="resultRaw" class="result-number">--</span>
-            <span class="metric-label">raw</span>
-          </div>
-          <div>
+          <div class="result-block">
             <span id="resultAccuracy" class="result-number">--</span>
             <span class="metric-label">accuracy</span>
           </div>
-          <div>
+          <div class="result-block wide-result">
             <span id="resultChars" class="result-number">--</span>
-            <span class="metric-label">chars</span>
+            <span class="metric-label">correct / missed / extra</span>
           </div>
         </footer>
       </section>

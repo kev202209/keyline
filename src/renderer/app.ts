@@ -85,6 +85,8 @@ const elements = {
   resultRaw: requiredElement<HTMLSpanElement>("#resultRaw"),
   resultAccuracy: requiredElement<HTMLSpanElement>("#resultAccuracy"),
   resultChars: requiredElement<HTMLSpanElement>("#resultChars"),
+  sessionStatus: requiredElement<HTMLParagraphElement>("#sessionStatus"),
+  timerProgress: requiredElement<HTMLSpanElement>("#timerProgress"),
   restartButton: requiredElement<HTMLButtonElement>("#restartButton"),
   clearHistoryButton: requiredElement<HTMLButtonElement>("#clearHistoryButton"),
   historyList: requiredElement<HTMLDivElement>("#historyList"),
@@ -220,7 +222,10 @@ function currentStats(): TypingStats {
 
 function renderLiveStats(): void {
   const stats = currentStats();
+  const remaining = remainingSeconds();
+  const progress = state.startedAt ? Math.max(0, Math.min(100, (remaining / state.durationSeconds) * 100)) : 100;
   elements.timer.textContent = String(remainingSeconds());
+  elements.timerProgress.style.width = `${progress}%`;
   elements.liveWpm.textContent = String(stats.wpm);
   elements.liveAccuracy.textContent = String(stats.accuracy);
 }
@@ -238,6 +243,9 @@ async function finishTest(): Promise<void> {
   }
 
   state.completed = true;
+  document.body.classList.remove("is-running");
+  document.body.classList.add("is-complete");
+  elements.sessionStatus.textContent = "saved";
 
   if (state.intervalId !== null) {
     clearInterval(state.intervalId);
@@ -267,6 +275,9 @@ function startTimer(): void {
   }
 
   state.startedAt = Date.now();
+  document.body.classList.add("is-running");
+  document.body.classList.remove("is-complete");
+  elements.sessionStatus.textContent = "running";
   state.intervalId = window.setInterval(() => {
     renderLiveStats();
 
@@ -285,8 +296,11 @@ function resetTest({ keepFocus = true }: ResetOptions = {}): void {
   state.startedAt = null;
   state.completed = false;
   state.intervalId = null;
+  document.body.classList.remove("is-running", "is-complete");
+  elements.sessionStatus.textContent = "ready";
   elements.typingInput.value = "";
   elements.timer.textContent = String(state.durationSeconds);
+  elements.timerProgress.style.width = "100%";
   elements.liveWpm.textContent = "0";
   elements.liveAccuracy.textContent = "100";
   elements.resultWpm.textContent = "--";
@@ -319,9 +333,14 @@ function formatDate(value: string): string {
 
 function renderHistory(): void {
   elements.historyList.replaceChildren();
+  elements.clearHistoryButton.disabled = state.history.length === 0;
 
   if (state.history.length === 0) {
     elements.bestLine.textContent = "No saved runs yet";
+    const empty = document.createElement("div");
+    empty.className = "empty-history";
+    empty.textContent = "No local runs yet.";
+    elements.historyList.appendChild(empty);
     return;
   }
 
@@ -334,7 +353,13 @@ function renderHistory(): void {
   }, null);
 
   if (best) {
-    elements.bestLine.textContent = `Best: ${best.wpm} wpm at ${best.accuracy}% accuracy`;
+    elements.bestLine.replaceChildren();
+    const score = document.createElement("span");
+    score.className = "best-score";
+    score.textContent = `${best.wpm} wpm`;
+    const detail = document.createElement("span");
+    detail.textContent = `${best.accuracy}% accuracy - ${best.durationSeconds}s test`;
+    elements.bestLine.append(score, detail);
   }
 
   state.history.slice(0, 30).forEach((run) => {
