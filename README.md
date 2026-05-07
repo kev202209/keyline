@@ -14,6 +14,7 @@ Keyline Type is an offline desktop typing test app inspired by Monkeytype. It ru
 
 ```bash
 npm install
+npm run build
 npm start
 ```
 
@@ -21,6 +22,7 @@ On Windows PowerShell, if the `npm` script shim is blocked by execution policy, 
 
 ```bash
 npm.cmd install
+npm.cmd run build
 npm.cmd start
 ```
 

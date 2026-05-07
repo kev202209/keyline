@@ -2,22 +2,40 @@ const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
+interface TypingHistoryResult {
+  id: string;
+  createdAt: string;
+  mode: "time";
+  durationSeconds: number;
+  wpm: number;
+  rawWpm: number;
+  accuracy: number;
+  correctChars: number;
+  incorrectChars: number;
+  extraChars: number;
+  correctWords: number;
+  wordCount: number;
+  typedChars: number;
+}
+
+type RawTypingHistoryResult = Partial<TypingHistoryResult>;
+
 const isMac = process.platform === "darwin";
 const historyFileName = "typing-history.json";
 
-let mainWindow;
+let mainWindow: any;
 
-function getHistoryPath() {
+function getHistoryPath(): string {
   return path.join(app.getPath("userData"), historyFileName);
 }
 
-async function readHistory() {
+async function readHistory(): Promise<TypingHistoryResult[]> {
   try {
     const raw = await fs.readFile(getHistoryPath(), "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    if (error.code === "ENOENT") {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map((entry) => sanitizeResult(entry)) : [];
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT") {
       return [];
     }
 
@@ -26,18 +44,18 @@ async function readHistory() {
   }
 }
 
-async function writeHistory(history) {
+async function writeHistory(history: TypingHistoryResult[]): Promise<void> {
   await fs.mkdir(path.dirname(getHistoryPath()), { recursive: true });
   await fs.writeFile(getHistoryPath(), JSON.stringify(history, null, 2), "utf8");
 }
 
-function sanitizeResult(result) {
+function sanitizeResult(result: RawTypingHistoryResult): TypingHistoryResult {
   const now = new Date().toISOString();
 
   return {
     id: typeof result.id === "string" && result.id ? result.id : `run-${Date.now()}`,
     createdAt: typeof result.createdAt === "string" ? result.createdAt : now,
-    mode: result.mode === "time" ? "time" : "time",
+    mode: "time",
     durationSeconds: Number(result.durationSeconds) || 30,
     wpm: Number(result.wpm) || 0,
     rawWpm: Number(result.rawWpm) || 0,
@@ -51,7 +69,7 @@ function sanitizeResult(result) {
   };
 }
 
-function createWindow() {
+function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1180,
     height: 780,
@@ -69,9 +87,9 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
+  mainWindow.loadFile(path.join(__dirname, "..", "..", "src", "renderer", "index.html"));
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+  mainWindow.webContents.setWindowOpenHandler(({ url }: { url: string }) => {
     shell.openExternal(url);
     return { action: "deny" };
   });
@@ -80,10 +98,10 @@ function createWindow() {
 app.whenReady().then(() => {
   ipcMain.handle("history:list", async () => {
     const history = await readHistory();
-    return history.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   });
 
-  ipcMain.handle("history:save", async (_event, result) => {
+  ipcMain.handle("history:save", async (_event: unknown, result: RawTypingHistoryResult) => {
     const history = await readHistory();
     const nextResult = sanitizeResult(result || {});
     const nextHistory = [nextResult, ...history].slice(0, 1000);
@@ -112,3 +130,5 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
+export {};

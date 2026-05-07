@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
 const { calculateTypingStats, normalizeWords } = require("../src/shared/typing");
 
-function test(name, fn) {
+function test(name: string, fn: () => void): void {
   fn();
   console.log(`ok - ${name}`);
 }
@@ -37,3 +37,5 @@ test("counts incorrect and extra characters", () => {
   assert.equal(stats.extraChars, 1);
   assert.equal(stats.accuracy, 80);
 });
+
+export {};

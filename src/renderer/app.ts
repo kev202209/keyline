@@ -1,4 +1,42 @@
-const wordBank = [
+interface TypingHistoryResult extends TypingStats {
+  id: string;
+  createdAt: string;
+  mode: "time";
+  durationSeconds: number;
+}
+
+interface AppState {
+  durationSeconds: number;
+  words: string[];
+  startedAt: number | null;
+  completed: boolean;
+  intervalId: number | null;
+  history: TypingHistoryResult[];
+}
+
+interface ResetOptions {
+  keepFocus?: boolean;
+}
+
+interface TypedWordsForRender {
+  parts: string[];
+  activeIndex: number;
+}
+
+interface KeylineApi {
+  history: {
+    list: () => Promise<TypingHistoryResult[]>;
+    save: (result: TypingHistoryResult) => Promise<TypingHistoryResult>;
+    clear: () => Promise<TypingHistoryResult[]>;
+    path: () => Promise<string>;
+  };
+}
+
+interface Window {
+  keyline: KeylineApi;
+}
+
+const wordBank: string[] = [
   "able", "about", "above", "after", "again", "align", "almost", "amber", "anchor", "answer",
   "array", "aside", "audio", "basic", "beach", "begin", "bloom", "brave", "brief", "bring",
   "build", "calm", "carry", "cause", "center", "change", "chart", "clear", "close", "cloud",
@@ -16,7 +54,7 @@ const wordBank = [
   "travel", "update", "useful", "value", "vector", "velvet", "window", "winter", "wonder", "yellow"
 ];
 
-const state = {
+const state: AppState = {
   durationSeconds: 15,
   words: [],
   startedAt: null,
@@ -25,46 +63,56 @@ const state = {
   history: []
 };
 
+function requiredElement<T extends Element>(selector: string): T {
+  const element = document.querySelector<T>(selector);
+
+  if (!element) {
+    throw new Error(`Missing required element: ${selector}`);
+  }
+
+  return element;
+}
+
 const elements = {
-  typingSurface: document.querySelector("#typingSurface"),
-  typingInput: document.querySelector("#typingInput"),
-  wordStream: document.querySelector("#wordStream"),
-  caret: document.querySelector("#caret"),
-  timer: document.querySelector("#timer"),
-  liveWpm: document.querySelector("#liveWpm"),
-  liveAccuracy: document.querySelector("#liveAccuracy"),
-  resultWpm: document.querySelector("#resultWpm"),
-  resultRaw: document.querySelector("#resultRaw"),
-  resultAccuracy: document.querySelector("#resultAccuracy"),
-  resultChars: document.querySelector("#resultChars"),
-  restartButton: document.querySelector("#restartButton"),
-  clearHistoryButton: document.querySelector("#clearHistoryButton"),
-  historyList: document.querySelector("#historyList"),
-  bestLine: document.querySelector("#bestLine"),
-  storagePath: document.querySelector("#storagePath"),
-  timeOptions: Array.from(document.querySelectorAll(".time-option"))
+  typingSurface: requiredElement<HTMLButtonElement>("#typingSurface"),
+  typingInput: requiredElement<HTMLTextAreaElement>("#typingInput"),
+  wordStream: requiredElement<HTMLSpanElement>("#wordStream"),
+  caret: requiredElement<HTMLSpanElement>("#caret"),
+  timer: requiredElement<HTMLSpanElement>("#timer"),
+  liveWpm: requiredElement<HTMLSpanElement>("#liveWpm"),
+  liveAccuracy: requiredElement<HTMLSpanElement>("#liveAccuracy"),
+  resultWpm: requiredElement<HTMLSpanElement>("#resultWpm"),
+  resultRaw: requiredElement<HTMLSpanElement>("#resultRaw"),
+  resultAccuracy: requiredElement<HTMLSpanElement>("#resultAccuracy"),
+  resultChars: requiredElement<HTMLSpanElement>("#resultChars"),
+  restartButton: requiredElement<HTMLButtonElement>("#restartButton"),
+  clearHistoryButton: requiredElement<HTMLButtonElement>("#clearHistoryButton"),
+  historyList: requiredElement<HTMLDivElement>("#historyList"),
+  bestLine: requiredElement<HTMLDivElement>("#bestLine"),
+  storagePath: requiredElement<HTMLParagraphElement>("#storagePath"),
+  timeOptions: Array.from(document.querySelectorAll<HTMLButtonElement>(".time-option"))
 };
 
-function shuffleWords(count = 150) {
-  const words = [];
+function shuffleWords(count = 150): string[] {
+  const words: string[] = [];
 
   for (let index = 0; index < count; index += 1) {
-    const word = wordBank[Math.floor(Math.random() * wordBank.length)];
+    const word = wordBank[Math.floor(Math.random() * wordBank.length)] || wordBank[0];
     words.push(word);
   }
 
   return words;
 }
 
-function targetText() {
+function targetText(): string {
   return state.words.join(" ");
 }
 
-function typedText() {
+function typedText(): string {
   return elements.typingInput.value;
 }
 
-function elapsedSeconds() {
+function elapsedSeconds(): number {
   if (!state.startedAt) {
     return 0;
   }
@@ -72,14 +120,14 @@ function elapsedSeconds() {
   return Math.min(state.durationSeconds, (Date.now() - state.startedAt) / 1000);
 }
 
-function remainingSeconds() {
+function remainingSeconds(): number {
   return Math.max(0, Math.ceil(state.durationSeconds - elapsedSeconds()));
 }
 
-function getTypedWordsForRender() {
+function getTypedWordsForRender(): TypedWordsForRender {
   const raw = typedText();
   const parts = raw.split(" ");
-  const activeIndex = raw.endsWith(" ") ? parts.length - 1 : parts.length - 1;
+  const activeIndex = parts.length - 1;
 
   return {
     parts,
@@ -87,7 +135,7 @@ function getTypedWordsForRender() {
   };
 }
 
-function renderWordStream() {
+function renderWordStream(): void {
   const { parts, activeIndex } = getTypedWordsForRender();
   const fragment = document.createDocumentFragment();
 
@@ -100,7 +148,7 @@ function renderWordStream() {
       const charElement = document.createElement("span");
       const typedChar = typedWord[charIndex];
       charElement.className = "char pending";
-      charElement.textContent = word[charIndex];
+      charElement.textContent = word[charIndex] || "";
 
       if (typedChar !== undefined) {
         charElement.className = typedChar === word[charIndex] ? "char correct" : "char incorrect";
@@ -110,7 +158,7 @@ function renderWordStream() {
     }
 
     if (typedWord.length > word.length) {
-      typedWord.slice(word.length).split("").forEach((extraChar) => {
+      typedWord.slice(word.length).split("").forEach((extraChar: string) => {
         const extraElement = document.createElement("span");
         extraElement.className = "char extra";
         extraElement.textContent = extraChar;
@@ -128,7 +176,7 @@ function renderWordStream() {
   });
 }
 
-function keepActiveWordVisible() {
+function keepActiveWordVisible(): void {
   const activeWord = elements.wordStream.querySelector(".word.is-active");
 
   if (activeWord) {
@@ -136,7 +184,7 @@ function keepActiveWordVisible() {
   }
 }
 
-function positionCaret() {
+function positionCaret(): void {
   const activeWord = elements.wordStream.querySelector(".word.is-active");
 
   if (!activeWord) {
@@ -146,9 +194,9 @@ function positionCaret() {
 
   const { parts, activeIndex } = getTypedWordsForRender();
   const activeTypedLength = parts[activeIndex]?.length || 0;
-  const targetChars = activeWord.querySelectorAll(".char");
+  const targetChars = activeWord.querySelectorAll<HTMLElement>(".char");
   const surfaceBox = elements.typingSurface.getBoundingClientRect();
-  let targetBox;
+  let targetBox: DOMRect;
 
   if (activeTypedLength > 0 && targetChars[Math.min(activeTypedLength - 1, targetChars.length - 1)]) {
     targetBox = targetChars[Math.min(activeTypedLength - 1, targetChars.length - 1)].getBoundingClientRect();
@@ -161,7 +209,7 @@ function positionCaret() {
   }
 }
 
-function currentStats() {
+function currentStats(): TypingStats {
   return calculateTypingStats({
     targetText: targetText(),
     typedText: typedText(),
@@ -170,32 +218,36 @@ function currentStats() {
   });
 }
 
-function renderLiveStats() {
+function renderLiveStats(): void {
   const stats = currentStats();
   elements.timer.textContent = String(remainingSeconds());
   elements.liveWpm.textContent = String(stats.wpm);
   elements.liveAccuracy.textContent = String(stats.accuracy);
 }
 
-function renderResults(stats) {
+function renderResults(stats: TypingStats): void {
   elements.resultWpm.textContent = String(stats.wpm);
   elements.resultRaw.textContent = String(stats.rawWpm);
   elements.resultAccuracy.textContent = `${stats.accuracy}%`;
   elements.resultChars.textContent = `${stats.correctChars}/${stats.incorrectChars}/${stats.extraChars}`;
 }
 
-async function finishTest() {
+async function finishTest(): Promise<void> {
   if (state.completed) {
     return;
   }
 
   state.completed = true;
-  clearInterval(state.intervalId);
+
+  if (state.intervalId !== null) {
+    clearInterval(state.intervalId);
+  }
+
   elements.typingInput.blur();
   elements.typingSurface.classList.remove("is-focused");
 
   const stats = currentStats();
-  const result = {
+  const result: TypingHistoryResult = {
     id: window.crypto?.randomUUID ? window.crypto.randomUUID() : `run-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     createdAt: new Date().toISOString(),
     mode: "time",
@@ -209,13 +261,13 @@ async function finishTest() {
   await loadHistory();
 }
 
-function startTimer() {
+function startTimer(): void {
   if (state.startedAt || state.completed) {
     return;
   }
 
   state.startedAt = Date.now();
-  state.intervalId = setInterval(() => {
+  state.intervalId = window.setInterval(() => {
     renderLiveStats();
 
     if (remainingSeconds() <= 0) {
@@ -224,8 +276,11 @@ function startTimer() {
   }, 160);
 }
 
-function resetTest({ keepFocus = true } = {}) {
-  clearInterval(state.intervalId);
+function resetTest({ keepFocus = true }: ResetOptions = {}): void {
+  if (state.intervalId !== null) {
+    clearInterval(state.intervalId);
+  }
+
   state.words = shuffleWords();
   state.startedAt = null;
   state.completed = false;
@@ -245,7 +300,7 @@ function resetTest({ keepFocus = true } = {}) {
   }
 }
 
-function focusTypingInput() {
+function focusTypingInput(): void {
   if (!state.completed) {
     elements.typingInput.focus();
     elements.typingSurface.classList.add("is-focused");
@@ -253,7 +308,7 @@ function focusTypingInput() {
   }
 }
 
-function formatDate(value) {
+function formatDate(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
@@ -262,7 +317,7 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
-function renderHistory() {
+function renderHistory(): void {
   elements.historyList.replaceChildren();
 
   if (state.history.length === 0) {
@@ -270,7 +325,7 @@ function renderHistory() {
     return;
   }
 
-  const best = state.history.reduce((winner, run) => {
+  const best = state.history.reduce<TypingHistoryResult | null>((winner, run) => {
     if (!winner || run.wpm > winner.wpm) {
       return run;
     }
@@ -278,7 +333,9 @@ function renderHistory() {
     return winner;
   }, null);
 
-  elements.bestLine.textContent = `Best: ${best.wpm} wpm at ${best.accuracy}% accuracy`;
+  if (best) {
+    elements.bestLine.textContent = `Best: ${best.wpm} wpm at ${best.accuracy}% accuracy`;
+  }
 
   state.history.slice(0, 30).forEach((run) => {
     const row = document.createElement("div");
@@ -286,7 +343,7 @@ function renderHistory() {
 
     const wpm = document.createElement("div");
     wpm.className = "history-wpm";
-    wpm.textContent = run.wpm;
+    wpm.textContent = String(run.wpm);
 
     const middle = document.createElement("div");
     const date = document.createElement("div");
@@ -306,14 +363,14 @@ function renderHistory() {
   });
 }
 
-async function loadHistory() {
+async function loadHistory(): Promise<void> {
   state.history = await window.keyline.history.list();
   renderHistory();
 }
 
-async function loadStoragePath() {
-  const path = await window.keyline.history.path();
-  elements.storagePath.textContent = path;
+async function loadStoragePath(): Promise<void> {
+  const storagePath = await window.keyline.history.path();
+  elements.storagePath.textContent = storagePath;
 }
 
 elements.typingSurface.addEventListener("click", focusTypingInput);
@@ -339,7 +396,7 @@ elements.typingInput.addEventListener("input", () => {
     finishTest();
   }
 });
-elements.typingInput.addEventListener("keydown", (event) => {
+elements.typingInput.addEventListener("keydown", (event: KeyboardEvent) => {
   if (event.key === " " && (typedText().endsWith(" ") || typedText().length === 0)) {
     event.preventDefault();
     return;

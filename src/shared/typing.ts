@@ -1,13 +1,35 @@
 const STANDARD_WORD_LENGTH = 5;
 
-function normalizeWords(text) {
+interface TypingStatsInput {
+  targetText: string;
+  typedText: string;
+  elapsedSeconds: number;
+  durationSeconds?: number;
+}
+
+interface TypingComparison {
+  correctChars: number;
+  incorrectChars: number;
+  extraChars: number;
+  correctWords: number;
+}
+
+interface TypingStats extends TypingComparison {
+  wpm: number;
+  rawWpm: number;
+  accuracy: number;
+  wordCount: number;
+  typedChars: number;
+}
+
+function normalizeWords(text: string): string[] {
   return text
     .trim()
     .split(/\s+/)
     .filter(Boolean);
 }
 
-function compareTypedWords(targetWords, typedWords) {
+function compareTypedWords(targetWords: string[], typedWords: string[]): TypingComparison {
   let correctChars = 0;
   let incorrectChars = 0;
   let extraChars = 0;
@@ -47,7 +69,7 @@ function compareTypedWords(targetWords, typedWords) {
   };
 }
 
-function calculateTypingStats({ targetText, typedText, elapsedSeconds, durationSeconds }) {
+function calculateTypingStats({ targetText, typedText, elapsedSeconds, durationSeconds }: TypingStatsInput): TypingStats {
   const safeElapsedSeconds = Math.max(1, Number(elapsedSeconds) || Number(durationSeconds) || 1);
   const targetWords = normalizeWords(targetText);
   const typedWords = normalizeWords(typedText);
