@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:;">
+    <title>Keyline Type</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workbench" aria-label="Typing test">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Keyline Type</p>
+            <h1>typing test</h1>
+          </div>
+
+          <div class="toolbar" aria-label="Test controls">
+            <div class="segmented" role="group" aria-label="Duration">
+              <button class="time-option is-active" type="button" data-duration="15">15</button>
+              <button class="time-option" type="button" data-duration="30">30</button>
+              <button class="time-option" type="button" data-duration="60">60</button>
+            </div>
+            <button id="restartButton" class="icon-button" type="button" title="New test" aria-label="New test">R</button>
+          </div>
+        </header>
+
+        <div class="meter-row" aria-live="polite">
+          <div>
+            <span id="timer" class="metric-value">15</span>
+            <span class="metric-label">seconds</span>
+          </div>
+          <div>
+            <span id="liveWpm" class="metric-value">0</span>
+            <span class="metric-label">wpm</span>
+          </div>
+          <div>
+            <span id="liveAccuracy" class="metric-value">100</span>
+            <span class="metric-label">accuracy</span>
+          </div>
+        </div>
+
+        <button id="typingSurface" class="typing-surface" type="button" aria-label="Typing area">
+          <span id="wordStream" class="word-stream"></span>
+          <span id="caret" class="caret" aria-hidden="true"></span>
+        </button>
+
+        <textarea id="typingInput" class="typing-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Typing input"></textarea>
+
+        <footer class="result-strip" aria-live="polite">
+          <div>
+            <span id="resultWpm" class="result-number">--</span>
+            <span class="metric-label">wpm</span>
+          </div>
+          <div>
+            <span id="resultRaw" class="result-number">--</span>
+            <span class="metric-label">raw</span>
+          </div>
+          <div>
+            <span id="resultAccuracy" class="result-number">--</span>
+            <span class="metric-label">accuracy</span>
+          </div>
+          <div>
+            <span id="resultChars" class="result-number">--</span>
+            <span class="metric-label">chars</span>
+          </div>
+        </footer>
+      </section>
+
+      <aside class="history-panel" aria-label="Typing history">
+        <div class="history-heading">
+          <div>
+            <p class="eyebrow">local</p>
+            <h2>history</h2>
+          </div>
+          <button id="clearHistoryButton" class="text-button" type="button">clear</button>
+        </div>
+        <div id="bestLine" class="best-line">No saved runs yet</div>
+        <div id="historyList" class="history-list"></div>
+        <p id="storagePath" class="storage-path"></p>
+      </aside>
+    </main>
+
+    <script src="../shared/typing.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
